@@ -1,11 +1,12 @@
+
 import streamlit as st
 import json, csv, io
 from generator import Answers, generate_storyboard
 
-st.set_page_config(page_title="Storyboard Generator", page_icon="🎬", layout="centered")
+st.set_page_config(page_title="Storyboard Generator+", page_icon="🎬", layout="centered")
 
-st.markdown("# 🎬 Storyboard Generator")
-st.caption("Crea un storyboard de video a partir de tus ideas")
+st.markdown("# 🎬 Storyboard Generator (PLUS)")
+st.caption("Shot list + prompts + análisis básico de calidad (offline)")
 
 with st.form("brief"):
     objetivo = st.selectbox("¿Cuál es tu objetivo?", ["ventas","leads","branding","lanzamiento","test"])
@@ -40,6 +41,13 @@ if submitted:
             st.write(f'**Transición:** {f["transicion"]}')
             st.code(f['prompt_mj'], language="text")
             st.code(json.dumps(f['prompt_video'], ensure_ascii=False, indent=2), language="json")
+            st.write(f'**Calidad del prompt (heurística):** {f["critic"]["score"]}/100')
+            if f["critic"]["issues"]:
+                st.write("**Sugerencias:**")
+                for i in f["critic"]["issues"]:
+                    st.write(f"- {i}")
+            st.write("**Reescritura sugerida:**")
+            st.code(f['critic']['rewrite'], language="text")
 
     # Botones de descarga
     st.markdown("## Descargas")
@@ -49,12 +57,12 @@ if submitted:
     # CSV simple
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["orden","beat","duracion_s","plano","lente","mov","accion","transicion","prompt_mj","prompt_video_json"])
+    writer.writerow(["orden","beat","duracion_s","plano","lente","mov","accion","transicion","prompt_mj","prompt_video_json","critic_score"])
     for f in data["frames"]:
         writer.writerow([f["orden"], f["beat"], f["duracion_s"], f["camara"]["plano"], f["camara"]["lente"],
                          f["camara"]["movimiento"], f["accion"], f["transicion"],
-                         f["prompt_mj"], json.dumps(f["prompt_video"], ensure_ascii=False)])
+                         f["prompt_mj"], json.dumps(f["prompt_video"], ensure_ascii=False), f["critic"]["score"]])
     st.download_button("⬇️ Descargar CSV", data=output.getvalue(), file_name="shotlist.csv", mime="text/csv")
 
 else:
-    st.info("Rellena el brief y pulsa **Generar storyboard**. Aquí verás el shot list y podrás descargar los prompts.")
+    st.info("Rellena el brief y pulsa **Generar storyboard**. Verás planos, prompts y análisis.")
